@@ -1,0 +1,103 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "ui",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "apps/ui/src",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:browser-esbuild",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "main": "apps/ui/src/main.ts",
+        "outputPath": "dist/apps/ui",
+        "index": "apps/ui/src/index.html",
+        "polyfills": ["zone.js"],
+        "tsConfig": "apps/ui/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/ui/public"
+          }
+        ],
+        "styles": ["apps/ui/src/styles.scss"],
+        "scripts": [
+          {
+            "input": "apps/ui/src/config.js",
+            "bundleName": "env-config",
+            "inject": true
+          }
+        ]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "2kb",
+              "maximumError": "4kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "compress": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node compress.js",
+        "cwd": "."
+      }
+    },
+    "serve": {
+      "executor": "@nx/angular:dev-server executor",
+      "configurations": {
+        "production": {
+          "buildTarget": "ui:build:production"
+        },
+        "development": {
+          "buildTarget": "ui:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "options": {
+        "buildTarget": "ui:build"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/ui/jest.config.ts"
+      }
+    },
+    "serve-static": {
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "ui:build",
+        "port": 4200,
+        "staticFilePath": "dist/apps/ui/browser",
+        "spa": true
+      }
+    }
+  }
+}

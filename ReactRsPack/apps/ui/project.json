@@ -1,0 +1,59 @@
+{
+  "name": "ui",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/ui/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/rspack:rspack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "web",
+        "outputPath": "dist/apps/ui",
+        "main": "apps/ui/src/main.tsx",
+        "tsConfig": "apps/ui/tsconfig.app.json",
+        "rspackConfig": "apps/ui/rspack.config.js",
+        "assets": ["apps/ui/src/favicon.ico", "apps/ui/src/assets"]
+      },
+      "configurations": {
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "mode": "production",
+          "optimization": true,
+          "sourceMap": false
+        }
+      }
+    },
+    "compress": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node compress.js",
+        "cwd": "."
+      }
+    },
+    "serve": {
+      "executor": "@nx/rspack:dev-server",
+      "options": {
+        "buildTarget": "ui:build:development"
+      },
+      "configurations": {
+        "development": {},
+        "production": {
+          "buildTarget": "ui:build:production"
+        }
+      }
+    },
+    "serve-static": {
+      "executor": "@nx/web:file-server",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "ui:build",
+        "spa": true
+      }
+    }
+  }
+}
