@@ -2,6 +2,7 @@
 const fs = require('fs');
 const zlib = require('zlib');
 const path = require('path');
+const sharp = require('sharp');
 
 // Update the path to match your dist directory
 const distDir = path.resolve(__dirname, 'dist/apps/ui');
@@ -22,6 +23,19 @@ function compressFile(filePath) {
   console.log(`Compressed ${filePath} to ${filePath}.br`);
 }
 
+function compressImage(filePath, format, options) {
+  const outputFilePath = `${filePath}.${format}`;
+  sharp(filePath)
+    .toFormat(format, options)
+    .toFile(outputFilePath, (err, info) => {
+      if (err) {
+        console.error(`Error compressing ${filePath} to ${format}:`, err);
+      } else {
+        console.log(`Compressed ${filePath} to ${outputFilePath}`);
+      }
+    });
+}
+
 function compressDirectory(directory) {
   fs.readdirSync(directory).forEach((file) => {
     const fullPath = path.join(directory, file);
@@ -29,6 +43,10 @@ function compressDirectory(directory) {
 
     if (stats.isFile() && /\.(js|css|html|svg)$/.test(fullPath)) {
       compressFile(fullPath);
+    } else if (/\.(png|jpg|jpeg)$/.test(fullPath)) {
+      // Compress images to AVIF and WebP formats
+      compressImage(fullPath, 'avif', { quality: 50 }); // Adjust quality as needed
+      compressImage(fullPath, 'webp', { quality: 75 }); // Adjust quality as needed
     } else if (stats.isDirectory()) {
       compressDirectory(fullPath);
     }

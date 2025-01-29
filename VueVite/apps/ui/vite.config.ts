@@ -7,7 +7,7 @@ import { ManualChunksOption, GetManualChunk } from 'rollup';
 
 const manualChunks: GetManualChunk = (id, meta) => {
   if (id.includes('config.ts')) {
-    return 'config';
+    return 'env-config';
   }
 };
 
