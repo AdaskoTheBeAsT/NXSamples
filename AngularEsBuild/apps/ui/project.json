@@ -10,6 +10,18 @@
       "executor": "@nx/angular:browser-esbuild",
       "outputs": ["{options.outputPath}"],
       "options": {
+        "plugins": [
+          {
+            "path": "node_modules/@espcom/esbuild-plugin-compress/dist/esm/index.js",
+            "options": {
+              "gzip": true,
+              "brotli": true,
+              "zstd": false,
+              "level": "high",
+              "extensions": [".js", ".css"]
+            }
+          }
+        ],
         "main": "apps/ui/src/main.ts",
         "outputPath": "dist/apps/ui",
         "index": "apps/ui/src/index.html",
