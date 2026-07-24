@@ -381,10 +381,21 @@ USER www
 `window._env_`, and (bonus) hot-patch `Content-Security-Policy` in `headers.conf` from
 `CONTENT_SECURITY_POLICY`. 🔐 The container runs rootless as `www`.
 
-### ⚠️ Zstandard and nginx: the missing piece
+### ⚠️ Zstandard: smaller is not the point
 
-`.zst` artifacts are produced here because they are measurably smaller than Brotli on large
-JavaScript bundles, but be aware of the deployment reality:
+To be clear: **Zstandard does not beat Brotli on size for static text.** Measured on
+`ReactWebpack`'s own `main.js` (237 932 B raw, Node 24 `zlib`):
+
+| Encoding | Size | vs Brotli | Compression time |
+| --- | --- | --- | --- |
+| gzip level 9 | 75 242 B | +17.2% | 6 ms |
+| **Brotli quality 11** | **64 185 B** | baseline | 228 ms |
+| Zstd level 19 | 67 826 B | +5.7% | 36 ms |
+| Zstd level 22 | 67 825 B | +5.7% | 40 ms |
+
+So Brotli 11 stays the winner for pre-compressed assets; Zstd's edge is **speed** (roughly 6x faster
+here, which matters for large builds and for on-the-fly compression), not ratio. `.zst` is included
+as an opt-in extra, not as a Brotli replacement. On top of that, mind the deployment reality:
 
 - 🚫 **There is no `zstd_static` in nginx.** Neither mainline nginx nor the `ngx_brotli` stack ships
   a module that serves pre-compressed `.zst` files the way `gzip_static` and `brotli_static` do,
@@ -528,8 +539,9 @@ Every workspace follows the same shape:
   per request and typically cuts transfer by an order of magnitude.
 - 🧊 **Never pre-compress the file you intend to rewrite.** Skip patterns are not optional.
 - 🖼️ **Ship modern image formats** (AVIF, WebP) as siblings, not replacements.
-- ⚠️ **Check the serving side before adding an encoding.** `.zst` is smaller than Brotli, but nginx
-  has no `zstd_static`, so gzip and Brotli remain the baseline.
+- ⚠️ **Measure before believing.** Brotli 11 compresses smaller than Zstd 19 on these bundles
+  (Zstd is ~6% bigger but ~6x faster), and nginx has no `zstd_static` at all, so gzip and Brotli
+  remain the baseline and `.zst` stays a bonus.
 
 ## 🔗 Related repositories
 
