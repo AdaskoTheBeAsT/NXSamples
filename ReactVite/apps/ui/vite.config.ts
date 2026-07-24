@@ -1,13 +1,15 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
-import { ManualChunksOption, GetManualChunk } from 'rollup';
+import type { ManualChunks } from './types/vite-chunking';
 import react from '@vitejs/plugin-react';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
-import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
-import viteCompression from 'vite-plugin-compression';
-import zlib from 'zlib';
+import { compression, defineAlgorithm } from 'vite-plugin-compression2';
+import zlib from 'node:zlib';
+//import { viteStaticCopy } from 'vite-plugin-static-copy';
 
-const manualChunks: GetManualChunk = (id, meta) => {
+const manualChunks: ManualChunks = (id) => {
+  if (id.includes('node_modules')) {
+    return 'vendor';
+  }
   if (id.includes('config.ts')) {
     return 'env-config';
   }
@@ -29,26 +31,30 @@ export default defineConfig({
 
   plugins: [
     react(),
-    nxViteTsPaths(),
-    nxCopyAssetsPlugin(['*.md']), // Gzip
-    viteCompression({
-      algorithm: 'gzip',
+    // viteStaticCopy({
+    //   targets: [{ src: '*.md', dest: '.' }],
+    // }),
+    compression({
       threshold: 1025,
-      ext: '.gz',
-      compressionOptions: { level: 9 },
-    }),
-    // Brotli
-    viteCompression({
-      algorithm: 'brotliCompress',
-      ext: '.br',
-      threshold: 1025,
-      compressionOptions: {
-        params: {
-          [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
-        },
-      },
+      exclude: [/env-config.*\.js$/],
+      algorithms: [
+        defineAlgorithm('gzip', { level: 9 }),
+        defineAlgorithm('brotliCompress', {
+          params: {
+            [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
+          },
+        }),
+        defineAlgorithm('zstd', {
+          params: {
+            [zlib.constants.ZSTD_c_compressionLevel]: 19,
+          },
+        }),
+      ],
     }),
   ],
+  resolve: {
+    tsconfigPaths: true,
+  },
 
   // Uncomment this if you are using workers.
   // worker: {
@@ -59,12 +65,9 @@ export default defineConfig({
     outDir: '../../dist/apps/ui',
     emptyOutDir: true,
     reportCompressedSize: true,
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: manualChunks as ManualChunksOption,
+        manualChunks,
       },
     },
   },

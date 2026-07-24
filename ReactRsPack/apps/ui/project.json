@@ -30,6 +30,8 @@
     },
     "compress": {
       "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["build"],
       "options": {
         "command": "node compress.js",
         "cwd": "."

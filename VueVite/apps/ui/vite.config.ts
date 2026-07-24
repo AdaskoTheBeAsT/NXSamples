@@ -1,11 +1,12 @@
-/// <reference types='vitest' />
+/// <reference types='vitest/config' />
 import { defineConfig } from 'vite';
+import type { ManualChunks } from './types/vite-chunking';
 import vue from '@vitejs/plugin-vue';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
-import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
-import { ManualChunksOption, GetManualChunk } from 'rollup';
+import { compression, defineAlgorithm } from 'vite-plugin-compression2';
+import zlib from 'node:zlib';
+//import { viteStaticCopy } from 'vite-plugin-static-copy';
 
-const manualChunks: GetManualChunk = (id, meta) => {
+const manualChunks: ManualChunks = (id: string) => {
   if (id.includes('config.ts')) {
     return 'env-config';
   }
@@ -25,7 +26,32 @@ export default defineConfig({
     host: 'localhost',
   },
 
-  plugins: [vue(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
+  plugins: [
+    vue(),
+    // viteStaticCopy({
+    //   targets: [{ src: '*.md', dest: '.' }],
+    // }),
+    compression({
+      threshold: 1025,
+      exclude: [/env-config.*\.js$/],
+      algorithms: [
+        defineAlgorithm('gzip', { level: 9 }),
+        defineAlgorithm('brotliCompress', {
+          params: {
+            [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
+          },
+        }),
+        defineAlgorithm('zstd', {
+          params: {
+            [zlib.constants.ZSTD_c_compressionLevel]: 19,
+          },
+        }),
+      ],
+    }),
+  ],
+  resolve: {
+    tsconfigPaths: true,
+  },
 
   // Uncomment this if you are using workers.
   // worker: {
@@ -39,9 +65,9 @@ export default defineConfig({
     commonjsOptions: {
       transformMixedEsModules: true,
     },
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: manualChunks as ManualChunksOption,
+        manualChunks,
       },
     },
   },
@@ -65,6 +91,8 @@ export default defineConfig({
       provider: 'v8',
       enabled: true,
       reporter: ['text', 'html', 'lcov'],
+      include: ['src/**/*.{ts,tsx,js,jsx,vue}'],
+      exclude: ['src/**/*.d.ts', 'src/**/*.{test,spec}.{ts,tsx,js,jsx}'],
     },
   },
 });

@@ -35,6 +35,8 @@ module.exports = [
     files: ['**/*.ts'],
     rules: {
       '@angular-eslint/prefer-standalone': 'off',
+      // Newly enabled by the ESLint v9 Angular preset; not previously configured here.
+      '@angular-eslint/prefer-on-push-component-change-detection': 'off',
     },
   },
 ];

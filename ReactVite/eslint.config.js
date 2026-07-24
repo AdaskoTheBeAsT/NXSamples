@@ -27,4 +27,7 @@ module.exports = [
     // Override or add rules here
     rules: {},
   },
+  {
+    ignores: ['**/vite.config.*.timestamp*', '**/vitest.config.*.timestamp*'],
+  },
 ];

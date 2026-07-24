@@ -1,28 +1,40 @@
 {
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "ui",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/ui/src",
   "tags": [],
   "targets": {
     "build": {
-      "executor": "@nx/angular:browser-esbuild",
+      "executor": "@nx/angular:application",
       "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
       "options": {
         "plugins": [
           {
-            "path": "node_modules/@espcom/esbuild-plugin-compress/dist/esm/index.js",
+            "path": "@adaskothebeast/esbuild-compressor",
             "options": {
-              "gzip": true,
-              "brotli": true,
-              "zstd": false,
-              "level": "high",
-              "extensions": [".js", ".css"]
+              "extensions": [".js"],
+              "skipFilesPattern": "env-config.*\\.js$",
+              "gzipOptions": {
+                "level": 9
+              },
+              "brotliOptions": {
+                "params": {
+                  "BROTLI_PARAM_QUALITY": 11
+                }
+              },
+              "zstd": true,
+              "zstdOptions": {
+                "params": {
+                  "ZSTD_c_compressionLevel": 19
+                }
+              }
             }
           }
         ],
-        "main": "apps/ui/src/main.ts",
+        "browser": "apps/ui/src/main.ts",
         "outputPath": "dist/apps/ui",
         "index": "apps/ui/src/index.html",
         "polyfills": ["zone.js"],
@@ -64,18 +76,19 @@
           "extractLicenses": false,
           "sourceMap": true
         }
-      },
-      "defaultConfiguration": "production"
+      }
     },
     "compress": {
       "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["build"],
       "options": {
-        "command": "node compress.js",
-        "cwd": "."
+        "command": "esbuild-compressor --config tools/ui-compression.config.cjs"
       }
     },
     "serve": {
       "executor": "@nx/angular:dev-server executor",
+      "defaultConfiguration": "development",
       "configurations": {
         "production": {
           "buildTarget": "ui:build:production"
@@ -83,8 +96,7 @@
         "development": {
           "buildTarget": "ui:build:development"
         }
-      },
-      "defaultConfiguration": "development"
+      }
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
@@ -96,10 +108,18 @@
       "executor": "@nx/eslint:lint"
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}",
+        "{workspaceRoot}\\.reports\\apps\\ui\\coverage"
+      ],
       "options": {
-        "jestConfig": "apps/ui/jest.config.ts"
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "coverage": true
+        }
       }
     },
     "serve-static": {
